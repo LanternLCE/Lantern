@@ -45,12 +45,6 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Test
-      run: set CL="/I\${{ github.workspace }}/lib/vcpkg/installed/x64-windows/include"
-
-    - name: Test2
-      run: set LINK="/LIBPATH:${{ github.workspace }}/lib/vcpkg/installed/x64-windows/lib"
-
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
@@ -61,4 +55,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Lantern-Release
-        path: ${{env.GITHUB_WORKSPACE}}\out\x64\bin\Release
+        path: ${{ github.workspace }}\out\x64\bin\Release
