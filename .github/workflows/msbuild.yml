@@ -39,7 +39,7 @@ jobs:
       uses: lukka/run-vcpkg@v4
       with:
         vcpkgArguments: 'detours'
-        vcpkgDirectory: '${{env.GITHUB_WORKSPACE}}\lib\vcpkg'
+        vcpkgDirectory: '${{ github.workspace }}/lib/vcpkg'
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
