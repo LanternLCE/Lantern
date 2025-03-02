@@ -41,7 +41,7 @@ jobs:
       uses: lukka/run-vcpkg@v4
       with:
         vcpkgArguments: 'detours'
-        vcpkgDirectory: '${{ github.workspace }}/lib/vcpkg'
+        vcpkgDirectory: 'D:\a\Lantern\lib\vcpkg'
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -53,4 +53,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Lantern-Release
-        path: ${{env.GITHUB_WORKSPACE}}\lantern\out\x64\bin\Release
+        path: ${{env.GITHUB_WORKSPACE}}\out\x64\bin\Release
