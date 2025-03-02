@@ -37,6 +37,12 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
+    - name: Install Detours
+      uses: lukka/run-vcpkg@v4
+      with:
+        vcpkgArguments: 'detours'
+        vcpkgDirectory: '${{ github.workspace }}/lib/vcpkg'
+
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
@@ -47,4 +53,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Lantern-Release
-        path: out\x64\bin\Release
+        path: ${{env.GITHUB_WORKSPACE}}\lantern\out\x64\bin\Release
