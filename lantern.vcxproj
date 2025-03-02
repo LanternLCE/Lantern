@@ -11,6 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="lantern\Util\Event.h" />
+    <ClInclude Include="lantern\InternalHooks\Minecraft.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
     <ClInclude Include="lantern\Lantern.h" />
     <ClInclude Include="lantern\LanternMod.h" />
     <ClInclude Include="lantern\framework.h" />
@@ -20,6 +25,11 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="lantern\Util\Event.cpp" />
+    <ClCompile Include="lantern\InternalHooks\Minecraft.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="lantern\pch.cpp" />
     <ClCompile Include="lantern\Util\Logger.cpp" />
     <ClCompile Include="lantern\Lantern.cpp">

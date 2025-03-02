@@ -5,12 +5,16 @@
 #include <filesystem>
 #include "LanternMod.h"
 #include "Lantern.h"
+#include "Util/HookHelper.h"
+#include "InternalHooks/Minecraft.h"
 
 // TODO: When events happen, register internal event for mod menu uiscene
 
 //const LANTERN_API LogFile* Lantern::logFile;
 const std::string MODS_DIR = "./mods/LanternMods";
 
+// internal hooks
+std::vector<std::tuple<PVOID*, PVOID>> hooks;
 std::vector<LanternMod*> mods;
 std::vector<LanternMod*> enabledMods;
 
@@ -60,8 +64,12 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     case DLL_PROCESS_ATTACH: {
         // drog and drap, from the desktop
         winrt::init_apartment();
-        LOG_C(ANSIColor::YELLOW, "Starting Lantern");
+        LOG_C(ANSIColor::GREEN, "Starting Lantern");
 
+        LOG_C(ANSIColor::GREEN, "Registering internal hooks");
+        registerHook(&(PVOID&)Minecraft_main, &Minecraft::main);
+
+        LOG_C(ANSIColor::GREEN, "Loading mods");
         if (!std::filesystem::exists(MODS_DIR))
             std::filesystem::create_directories(MODS_DIR);
 
