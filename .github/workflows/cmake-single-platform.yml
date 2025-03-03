@@ -37,4 +37,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Lantern
-        path: ${{github.workspace}}\Release
+        path: ${{github.workspace}}\build\Release
