@@ -21,7 +21,7 @@ std::vector<LanternMod*> enabledMods;
 typedef LanternMod* (*Initialize)();
 
 void registerMod(const std::filesystem::directory_entry& path) {
-    HINSTANCE dll = LoadLibrary(path.path().c_str());
+    HINSTANCE dll = LoadLibrary(reinterpret_cast<LPCSTR>(path.path().c_str()));
 
     if (!dll) {
         LOGW(L"Couldn't load mod ", path.path().c_str());
