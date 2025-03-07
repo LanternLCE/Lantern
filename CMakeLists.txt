@@ -26,13 +26,15 @@ set(SRC_FILES
 	lantern/InternalHooks/Minecraft.h
 )
 
+include_directories(lantern ${CMAKE_SOURCE_DIR}/lib/detours/include)
+
 include(GenerateExportHeader)
 
 add_subdirectory(lib/detours/)
 
 add_library(Lantern SHARED ${SRC_FILES})
 
-include_directories(Lantern PUBLIC ${SRC_FILES})
+generate_export_header(Lantern)
 
 set_target_properties(Lantern
   PROPERTIES

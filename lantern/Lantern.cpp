@@ -21,18 +21,18 @@ std::vector<LanternMod*> enabledMods;
 typedef LanternMod* (*Initialize)();
 
 void registerMod(const std::filesystem::directory_entry& path) {
-    HINSTANCE dll = LoadLibrary(reinterpret_cast<LPCSTR>(path.path().c_str()));
+    HINSTANCE dll = LoadLibraryW(path.path().c_str());
 
     if (!dll) {
         LOGW(L"Couldn't load mod ", path.path().c_str());
         return;
     }
 
-	Initialize init = (Initialize)GetProcAddress(dll, "Initialize");
-	if (!init) {
-        LOGW(L"Couldn't find init function in mod ", path.path().c_str());
-        return;
-	}
+    Initialize init = (Initialize)GetProcAddress(dll, "Initialize");
+    if (!init) {
+            LOGW(L"Couldn't find init function in mod ", path.path().c_str());
+            return;
+    }
 
 	LanternMod* mod = init();
 	mods.push_back(mod);
