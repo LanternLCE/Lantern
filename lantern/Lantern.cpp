@@ -8,61 +8,33 @@
 #include "Util/HookHelper.h"
 #include "InternalHooks/Minecraft.h"
 
-// TODO: When events happen, register internal event for mod menu uiscene
-
-//const LANTERN_API LogFile* Lantern::logFile;
 const std::string MODS_DIR = "./mods/LanternMods";
-
-// internal hooks
-std::vector<std::tuple<PVOID*, PVOID>> hooks;
-std::vector<LanternMod*> mods;
-std::vector<LanternMod*> enabledMods;
+std::vector<std::unique_ptr<LanternMod>> mods;
 
 typedef LanternMod* (*Initialize)();
 
 void registerMod(const std::filesystem::directory_entry& path) {
     HINSTANCE dll = LoadLibraryW(path.path().c_str());
-
     if (!dll) {
-        LOGW(L"Couldn't load mod ", path.path().c_str());
+        LOGW(L"Failed to load mod: ", path.path().c_str());
         return;
     }
 
-    Initialize init = (Initialize)GetProcAddress(dll, "Initialize");
+    Initialize init = reinterpret_cast<Initialize>(GetProcAddress(dll, "Initialize"));
     if (!init) {
-            LOGW(L"Couldn't find init function in mod ", path.path().c_str());
-            return;
+        LOGW(L"Missing Initialize function in mod: ", path.path().c_str());
+        FreeLibrary(dll);
+        return;
     }
 
-	LanternMod* mod = init();
-	mods.push_back(mod);
-    // TODO: Settings for both Lantern and mods.
-    enabledMods.push_back(mod);
-
+    auto mod = std::unique_ptr<LanternMod>(init());
     LOGW(L"Loaded mod '", mod->GetName(), L"' v", mod->GetVersion());
-
-    if (std::find(enabledMods.begin(), enabledMods.end(), mod) != enabledMods.end())
-	{
-		mod->Enable();
-	}
+    mod->Enable();  
+    mods.push_back(std::move(mod));
 }
 
-BOOL APIENTRY DllMain(HMODULE hModule,
-                      DWORD callReason,
-                      LPVOID lpReserved) {
-    // for funny ansi shit
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    if (DetourIsHelperProcess()) {
-        return TRUE;
-    };
-
-    switch (callReason)
-    {
-    case DLL_PROCESS_ATTACH: {
-        // drog and drap, from the desktop
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD callReason, LPVOID lpReserved) {
+    if (callReason == DLL_PROCESS_ATTACH) {
         winrt::init_apartment();
         LOG_C(ANSIColor::GREEN, "Starting Lantern");
 
@@ -70,27 +42,20 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         registerHook(&(PVOID&)Minecraft_main, &Minecraft::main);
 
         LOG_C(ANSIColor::GREEN, "Loading mods");
-        if (!std::filesystem::exists(MODS_DIR))
+        if (!std::filesystem::exists(MODS_DIR)) {
             std::filesystem::create_directories(MODS_DIR);
-
-        for (const std::filesystem::directory_entry& f : std::filesystem::directory_iterator(MODS_DIR)) {
-            if (f.is_regular_file())
-                registerMod(f);
         }
-        break;
-    }
-    case DLL_PROCESS_DETACH: {
-        for (LanternMod* mod : mods) {
+
+        for (const auto& f : std::filesystem::directory_iterator(MODS_DIR)) {
+            if (f.is_regular_file()) registerMod(f);
+        }
+    } 
+    else if (callReason == DLL_PROCESS_DETACH) {
+        for (auto& mod : mods) {
             mod->Disable();
         }
-        break;
     }
-    default: break;
-    }
-
     return TRUE;
 }
 
-void Lantern::IgnoreMe()
-{
-}
+void Lantern::IgnoreMe() {}
