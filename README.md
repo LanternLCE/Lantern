@@ -10,5 +10,5 @@ A Minecraft: Xbox One Edition modloader
 - [ ] Torch API
   - Literally the entire API, will take a while.
 - [ ] Proper logging
-- [ ] Example mod
+- [X] Example mod
 - [ ] Events
