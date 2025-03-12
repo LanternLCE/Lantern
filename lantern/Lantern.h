@@ -1,10 +1,30 @@
 #pragma once
 
+#ifdef LANTERN_EXPORTS
+#define LANTERN_CLASS __declspec(dllexport)
+#else  
+#define LANTERN_CLASS __declspec(dllimport)
+#endif
+
 //#include "Util/LogFile.h";
 
 class Lantern {
 public:
-	/// had to add this to get it to create .lib file????
-	static __declspec(dllexport) void IgnoreMe();
-	//static const LANTERN_API LogFile* logFile;
+    #define LANTERN_VERSION L"1.1.0.0"
+
+    static class LANTERN_CLASS Version {
+    public:
+        uint16_t major;
+        uint16_t minor;
+        uint16_t build;
+        uint16_t patch;
+
+        Version(std::wstring version);
+        Version(uint16_t major, uint16_t minor, uint16_t build, uint16_t patch);
+        Version(uint64_t packed);
+        uint64_t GetPackedVersion();
+        std::wstring GetVersionString();
+    };
+
+	static LANTERN_CLASS Version version;
 };
