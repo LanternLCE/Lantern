@@ -1,7 +1,9 @@
+include(FetchContent)
+
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.8.2)
 project(Lantern)
 set (CMAKE_CXX_STANDARD 20)
 
@@ -26,19 +28,24 @@ set(SRC_FILES
 	lantern/InternalHooks/Minecraft.h
 )
 
-include_directories(lantern ${CMAKE_SOURCE_DIR}/lib/detours/include)
+# Safetyhook
+FetchContent_Declare(
+safetyhook
+    GIT_REPOSITORY "https://github.com/cursey/safetyhook.git"
+    GIT_TAG "origin/main"
+)
 
-include(GenerateExportHeader)
+FetchContent_MakeAvailable(safetyhook)
 
-add_subdirectory(lib/detours/)
+include_directories(lantern)
 
 add_library(Lantern SHARED ${SRC_FILES})
+target_link_libraries(Lantern PUBLIC safetyhook)
 
+include(GenerateExportHeader)
 generate_export_header(Lantern)
-
 set_target_properties(Lantern
   PROPERTIES
   DEFINE_SYMBOL "LANTERN_EXPORTS"
   )
 
-target_link_libraries(Lantern PUBLIC lib_detours)

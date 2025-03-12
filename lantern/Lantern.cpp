@@ -83,9 +83,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD dwMode = 0;
     GetConsoleMode(hOut, &dwMode);
     SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    if (DetourIsHelperProcess()) {
-        return TRUE;
-    };
 
     switch (callReason)
     {

@@ -28,127 +28,151 @@ extern std::vector<std::tuple<PVOID*, PVOID>> hooks;
 
 using VTable = void(*)();
 
-/// <summary>
-/// Registers a hook
-/// </summary>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <returns></returns>
-inline LONG registerHook(PVOID* orig, PVOID hook) {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    LONG att = DetourAttach(orig, hook);
-    hooks.push_back(std::tuple(orig, hook));
-    DetourTransactionCommit();
-    return att;
+
+#define CREATE_HOOK(name) \
+    using t##name = SafetyHookInline; \
+    inline t##name name;
+
+template <typename T, typename U>
+inline SafetyHookInline registerHook(T orig, U hook)
+{
+    return safetyhook::create_inline(orig, hook);
 }
 
-/// <summary>
-/// Unregisters a hook
-/// </summary>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <returns></returns>
-inline LONG unregisterHook(PVOID* orig, PVOID hook) {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    LONG att = DetourDetach(orig, hook);
-    hooks.erase(std::remove(hooks.begin(), hooks.end(), std::tuple(orig, hook)), hooks.end());
-    DetourTransactionCommit();
-    return att;
+
+#define CREATE_MID_HOOK(name, hook) \
+    using t##name = SafetyHookMid; \
+    using t##hook = void(_fastcall)(SafetyHookContext& ctx); \
+    inline t##hook hook; \
+    inline t##name name;
+
+template <typename T>
+inline SafetyHookMid registerMidHook(T orig, safetyhook::MidHookFn hook)
+{
+    return safetyhook::create_mid(orig, hook);
 }
 
-/// <summary>
-/// Registers a hook
-/// </summary>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <param name="onRegister">The function to call when the hook is registered</param>
-/// <returns></returns>
-inline LONG registerHook(PVOID* orig, PVOID hook, void (*onRegister)()) {
-    LONG att = registerHook(orig, hook);
-	onRegister();
-    return att;
-}
-
-/// <summary>
-/// Registers a vector of hooks
-/// </summary>
-/// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook, void (*onRegister)())</param>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <param name="onRegister">The function to call when the hook is registered</param>
-/// <returns></returns>
-inline void registerHooks(std::vector<std::tuple<PVOID*, PVOID, void (*)()>> hooks_vec) {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    for (auto hook : hooks_vec) {
-        LONG att = DetourAttach(std::get<0>(hook), std::get<1>(hook));
-        hooks.push_back(std::tuple<PVOID*, PVOID>(std::get<0>(hook), std::get<1>(hook)));
-        void (*onRegister)() = std::get<2>(hook);
-        if (onRegister != nullptr)
-            onRegister();
-    }
-    
-    DetourTransactionCommit();    
-}
-
-/// <summary>
-/// Registers a vector of hooks
-/// </summary>
-/// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook, void (*onRegister)())</param>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <param name="onRegister">The function to call when the hook is registered</param>
-/// <returns></returns>
-inline void registerHooks(std::vector<std::tuple<PVOID*, PVOID>> hooks_vec) {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    for (auto hook : hooks_vec) {
-        LONG att = DetourAttach(std::get<0>(hook), std::get<1>(hook));
-        hooks.push_back(hook);
-    }
-
-    DetourTransactionCommit();
-}
-
-/// <summary>
-/// Unregisters a vector of hooks
-/// </summary>
-/// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook, void (*onUnregister)())</param>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <param name="onRegister">The function to call when the hook is unregistered</param>
-/// <returns></returns>
-inline void unregisterHooks(std::vector<std::tuple<PVOID*, PVOID, void (*)()>> hooks_vec) {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    for (auto hook : hooks_vec) {
-        LONG att = DetourDetach(std::get<0>(hook), std::get<1>(hook));
-        hooks.erase(std::remove(hooks.begin(), hooks.end(), std::tuple<PVOID*, PVOID>(std::get<0>(hook), std::get<1>(hook))), hooks.end());
-
-        void (*onUnregister)() = std::get<2>(hook);
-        if (onUnregister != nullptr)
-            onUnregister();
-    }
-
-    DetourTransactionCommit();
-}
-
-/// <summary>
-/// Unregisters a vector of hooks
-/// </summary>
-/// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook)</param>
-/// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
-/// <param name="hook">The hook/replacement function, has to be static.</param>
-/// <returns></returns>
-inline void unregisterHooks(std::vector<std::tuple<PVOID*, PVOID>> hooks_vec) {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    for (auto hook : hooks_vec) {
-        LONG att = DetourDetach(std::get<0>(hook), std::get<1>(hook));
-        hooks.erase(std::remove(hooks.begin(), hooks.end(), hook), hooks.end());
-    }
-
-    DetourTransactionCommit();
-}
+///// <summary>
+///// Registers a hook
+///// </summary>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <returns></returns>
+//inline LONG registerHook(PVOID* orig, PVOID hook) {
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    LONG att = DetourAttach(orig, hook);
+//    hooks.push_back(std::tuple(orig, hook));
+//    DetourTransactionCommit();
+//    return att;
+//}
+//
+///// <summary>
+///// Unregisters a hook
+///// </summary>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <returns></returns>
+//inline LONG unregisterHook(PVOID* orig, PVOID hook) {
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    LONG att = DetourDetach(orig, hook);
+//    hooks.erase(std::remove(hooks.begin(), hooks.end(), std::tuple(orig, hook)), hooks.end());
+//    DetourTransactionCommit();
+//    return att;
+//}
+//
+///// <summary>
+///// Registers a hook
+///// </summary>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <param name="onRegister">The function to call when the hook is registered</param>
+///// <returns></returns>
+//inline LONG registerHook(PVOID* orig, PVOID hook, void (*onRegister)()) {
+//    LONG att = registerHook(orig, hook);
+//	onRegister();
+//    return att;
+//}
+//
+///// <summary>
+///// Registers a vector of hooks
+///// </summary>
+///// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook, void (*onRegister)())</param>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <param name="onRegister">The function to call when the hook is registered</param>
+///// <returns></returns>
+//inline void registerHooks(std::vector<std::tuple<PVOID*, PVOID, void (*)()>> hooks_vec) {
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    for (auto hook : hooks_vec) {
+//        LONG att = DetourAttach(std::get<0>(hook), std::get<1>(hook));
+//        hooks.push_back(std::tuple<PVOID*, PVOID>(std::get<0>(hook), std::get<1>(hook)));
+//        void (*onRegister)() = std::get<2>(hook);
+//        if (onRegister != nullptr)
+//            onRegister();
+//    }
+//    
+//    DetourTransactionCommit();    
+//}
+//
+///// <summary>
+///// Registers a vector of hooks
+///// </summary>
+///// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook, void (*onRegister)())</param>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <param name="onRegister">The function to call when the hook is registered</param>
+///// <returns></returns>
+//inline void registerHooks(std::vector<std::tuple<PVOID*, PVOID>> hooks_vec) {
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    for (auto hook : hooks_vec) {
+//        LONG att = DetourAttach(std::get<0>(hook), std::get<1>(hook));
+//        hooks.push_back(hook);
+//    }
+//
+//    DetourTransactionCommit();
+//}
+//
+///// <summary>
+///// Unregisters a vector of hooks
+///// </summary>
+///// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook, void (*onUnregister)())</param>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <param name="onRegister">The function to call when the hook is unregistered</param>
+///// <returns></returns>
+//inline void unregisterHooks(std::vector<std::tuple<PVOID*, PVOID, void (*)()>> hooks_vec) {
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    for (auto hook : hooks_vec) {
+//        LONG att = DetourDetach(std::get<0>(hook), std::get<1>(hook));
+//        hooks.erase(std::remove(hooks.begin(), hooks.end(), std::tuple<PVOID*, PVOID>(std::get<0>(hook), std::get<1>(hook))), hooks.end());
+//
+//        void (*onUnregister)() = std::get<2>(hook);
+//        if (onUnregister != nullptr)
+//            onUnregister();
+//    }
+//
+//    DetourTransactionCommit();
+//}
+//
+///// <summary>
+///// Unregisters a vector of hooks
+///// </summary>
+///// <param name="hooks_vec">A vector of tuples (PVOID* orig, PVOID hook)</param>
+///// <param name="orig">The original function found within MC, defined using CREATE_FUNC</param>
+///// <param name="hook">The hook/replacement function, has to be static.</param>
+///// <returns></returns>
+//inline void unregisterHooks(std::vector<std::tuple<PVOID*, PVOID>> hooks_vec) {
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    for (auto hook : hooks_vec) {
+//        LONG att = DetourDetach(std::get<0>(hook), std::get<1>(hook));
+//        hooks.erase(std::remove(hooks.begin(), hooks.end(), hook), hooks.end());
+//    }
+//
+//    DetourTransactionCommit();
+//}
