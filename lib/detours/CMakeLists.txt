@@ -31,8 +31,8 @@ target_compile_options(${TARGET} PRIVATE /W4 /WX /Zi /MT /Gy /Gm- /Zl /Od)
 target_include_directories(${TARGET} PUBLIC ${DETOURS_SOURCE})
 
 # withdll
-add_executable(withdll Detours/samples/withdll/withdll.cpp)
-target_link_libraries(withdll lib_detours)
+#add_executable(withdll Detours/samples/withdll/withdll.cpp)
+#target_link_libraries(withdll lib_detours)
 
 # Static library for the syelog components
 add_library(syelog STATIC Detours/samples/syelog/syelog.cpp
@@ -42,9 +42,8 @@ target_link_libraries(syelog PUBLIC lib_detours ws2_32 secur32)
 
 
 # syelogd
-add_executable(syelogd Detours/samples/syelog/syelogd.cpp 
-                       Detours/samples/syelog/syelog.h)
-target_link_libraries(syelogd PRIVATE lib_detours)
+#add_executable(syelogd Detours/samples/syelog/syelogd.cpp Detours/samples/syelog/syelog.h)
+#target_link_libraries(syelogd PRIVATE lib_detours)
 
 # traceapi example
 add_library(traceapi SHARED Detours/samples/traceapi/trcapi.cpp 
