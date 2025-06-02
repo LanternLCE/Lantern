@@ -10,7 +10,7 @@
 
 class Lantern {
 public:
-    #define LANTERN_VERSION L"1.1.0.0"
+    #define LANTERN_VERSION L"1.2.0.0"
 
     static class LANTERN_CLASS Version {
     public:

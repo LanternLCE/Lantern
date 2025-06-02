@@ -5,6 +5,14 @@ cmake_minimum_required(VERSION 3.29)
 project(Lantern)
 set (CMAKE_CXX_STANDARD 20)
 
+include(FetchContent)
+FetchContent_Declare(
+  yaml-cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(yaml-cpp)
+
 set(SRC_FILES
 	resource.h 
 	Resource.rc
@@ -24,7 +32,7 @@ set(SRC_FILES
 
 	lantern/InternalHooks/Minecraft.cpp 
 	lantern/InternalHooks/Minecraft.h
-)
+ "lantern/ModSettings.h" "lantern/ModSettings.cpp")
 
 include_directories(lantern ${CMAKE_SOURCE_DIR}/lib/detours/include)
 
@@ -42,3 +50,4 @@ set_target_properties(Lantern
   )
 
 target_link_libraries(Lantern PUBLIC lib_detours)
+target_link_libraries(Lantern PUBLIC yaml-cpp::yaml-cpp)

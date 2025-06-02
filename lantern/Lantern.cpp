@@ -3,10 +3,12 @@
 #include <winrt/base.h>
 #include "Util/Logger.h"
 #include <filesystem>
+#include <fstream>
 #include "LanternMod.h"
 #include "Lantern.h"
 #include "Util/HookHelper.h"
 #include "InternalHooks/Minecraft.h"
+#include <ModSettings.h>
 
 // TODO: When events happen, register internal event for mod menu uiscene
 
@@ -18,10 +20,9 @@ LANTERN_CLASS Lantern::Version Lantern::version = Lantern::Version(LANTERN_VERSI
 // internal hooks
 std::vector<std::tuple<PVOID*, PVOID>> hooks;
 std::vector<LanternMod*> mods;
-std::vector<LanternMod*> enabledMods;
 
 typedef LanternMod* (*Initialize)();
-typedef uint64_t (*GetTargetedLanternVersion)();
+typedef uint64_t(*GetTargetedLanternVersion)();
 
 
 void registerMod(const std::filesystem::directory_entry& path) {
@@ -34,50 +35,29 @@ void registerMod(const std::filesystem::directory_entry& path) {
 
     Initialize init = (Initialize)GetProcAddress(dll, "Initialize");
     if (!init) {
-            LOGW(L"Couldn't find init function in mod ", path.path().c_str());
-            return;
+        LOGW(L"Couldn't find init function in mod ", path.path().c_str());
+        return;
     }
 
     bool notLegacy = false;
 
-    // we check this to make sure the mod isnt from the first versions of Lantern
-    GetTargetedLanternVersion getVersion = (GetTargetedLanternVersion)GetProcAddress(dll, "GetTargetedLanternVersion");
-    if (getVersion)
-        notLegacy = true;
+    LanternMod* mod = init();
+    mods.push_back(mod);
 
-	LanternMod* mod = init();
-	mods.push_back(mod);
-    // TODO: Settings for both Lantern and mods.
-    enabledMods.push_back(mod);
+    uint64_t modLanternVersion = mod->GetTargetedLanternVersion();
 
-    // in the future this will be completely removed.
-    if (!notLegacy) {
-        LOGW_C(ANSIColor::YELLOW, L"Mod ", mod->GetName(), L" was made for an older version of Lantern and may not be supported in later versions.");
-        LOGW(L"Loaded mod '", mod->GetName(), L"' v", mod->GetVersion());
-    }
-    else
-    {
-        uint64_t modLanternVersion = getVersion();
-
-        if (modLanternVersion != Lantern::version.GetPackedVersion()) {
-            LOGW_C(ANSIColor::YELLOW, L"Mod ", mod->GetName(), L" was made for a different version of Lantern (v", Lantern::Version::Version(modLanternVersion).GetVersionString(), L"). You are running Lantern v", Lantern::version.GetVersionString());
-            // TODO: in Lantern settings allow loading older versions of mods if wanted
-            // for now we continue
-            //return;
-        }
-
-        LOGW(L"Loaded mod '", mod->GetName(), L"' v", mod->GetVersion(), L" by '", mod->GetAuthorName(), L"'");
+    if (modLanternVersion != Lantern::version.GetPackedVersion()) {
+        LOGW_C(ANSIColor::YELLOW, L"Mod '", mod->GetName(), L"' was built for a different version of Lantern (v", Lantern::Version::Version(modLanternVersion).GetVersionString(), L"). You are running Lantern v", Lantern::version.GetVersionString());
     }
 
-    if (std::find(enabledMods.begin(), enabledMods.end(), mod) != enabledMods.end())
-	{
-		mod->Enable();
-	}
+    LOGW(L"Loaded mod '", mod->GetName(), L"' v", mod->GetVersion(), L" by '", mod->GetAuthorName(), L"'");
+
+    mod->Enable();
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule,
-                      DWORD callReason,
-                      LPVOID lpReserved) {
+    DWORD callReason,
+    LPVOID lpReserved) {
     // for funny ansi shit
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
@@ -93,6 +73,15 @@ BOOL APIENTRY DllMain(HMODULE hModule,
         // drog and drap, from the desktop
         winrt::init_apartment();
         LOGW_C(ANSIColor::GREEN, L"Starting Lantern v", Lantern::version.GetVersionString());
+
+        winrt::Windows::Storage::StorageFolder folder = (winrt::Windows::Storage::ApplicationData::Current()).LocalFolder();
+        std::filesystem::path lanternDir = std::filesystem::path(folder.Path().c_str()) / "Lantern";
+
+        if (!std::filesystem::exists(lanternDir)) {
+            std::filesystem::create_directories(lanternDir);
+            LOGW(L"Created Lantern config dir at ", lanternDir);
+        }
+        ModSettings* settings = new ModSettings(L"lantern");
 
         LOG_C(ANSIColor::GREEN, "Registering internal hooks");
         registerHook(&(PVOID&)Minecraft_main, &Minecraft::main);
