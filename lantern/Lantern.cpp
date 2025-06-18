@@ -91,7 +91,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
             std::filesystem::create_directories(MODS_DIR);
 
         for (const std::filesystem::directory_entry& f : std::filesystem::directory_iterator(MODS_DIR)) {
-            if (f.is_regular_file())
+            if (f.is_regular_file() && f.path().extension() == ".dll")
                 registerMod(f);
         }
         break;
